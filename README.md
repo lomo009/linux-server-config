@@ -9,8 +9,9 @@ IP 18.217.76.29
 ## Secure Your Server
 ### Update all currently installed packages
 `sudo apt-get update` to update packages
-`sudo apt-get upgrade` to upgrade packages
-*select y to continue when prompted
+
+`sudo apt-get upgrade` to upgrade packages  
+  *select y to continue when prompted
 `sudo apt-get install finger`
 
 ### Give grader Access
