@@ -1,10 +1,12 @@
 # linux-server-config
 
-IP 18.217.76.29
+IP: `18.188.178.251`
 
 ## Get Your Server
 - Start new Ubuntu Linux Server instance with Amazon Lightsail
 - Follow instructions to SSH into the server.
+- Log in with `ssh -i ~/.ssh/LightsailDefaultPrivateKey-us-east-2.pem ubuntu@18.188.178.251` on local machine
+- Enter `Yes` when prompted
 
 ## Secure Your Server
 ### Update all currently installed packages
@@ -16,13 +18,14 @@ IP 18.217.76.29
 ### Give grader Access
 - `sudo adduser grader`  
 - create password  
+- confirm password  
 - edit information  
 - select `Y` to create and save the user  
 
 ### Grant grader User sudo Permissions
 - `sudo touch /etc/sudoers.d/grader`  
 - `sudo nano /etc/sudoers.d/grader`  
-- `add grader ALL=(ALL) NOPASSWD:ALL` to the file  
+- add `grader ALL=(ALL) NOPASSWD:ALL` to the file  
 - exit and save changes  
 
 ### Configure Key-Based Authentication for grader User
@@ -33,33 +36,56 @@ IP 18.217.76.29
 - `sudo chown grader:grader /home/grader/.ssh/authorized_keys`  
 - `sudo chmod 644 /home/grader/.ssh/authorized_keys`  
 - `sudo nano /home/grader/.ssh/authorized_keys`  
+- On your local maching `cat ~/.ssh/udacity_key.rsa.pub`
 - Copy details of the *udacity_key.rsa.pub* file to the *authorized_keys* file in _grader_  
 - Exit and save changes.  
 
-**Can now login with** `ssh -i ~/.ssh/udacity_key.rsa grader@18.217.76.29` 
+### Change Timezone to UTC
+- `sudo timedatectl set-timezone UTC`  
 
 ### Disable Login for root User
 - `sudo nano /etc/ssh/sshd_config`  
 - Change `PermitRootLogin prohibit-password` to `PermitRootLogin no`  
 - `sudo service ssh restart`  
 
-### Change Timezone to UTC
-- `sudo timedatectl set-timezone UTC`  
-
 ### Change Port to 2200
 - `sudo nano /etc/ssh/sshd_config`  
 - Change `Port 22` to `Port 2200` (4th line from the top)  
+- Be sure to restart SSH otherwise the connection is refused
+- `sudo service ssh restart`
 
 ### Configure UFW Firewall
 - `sudo ufw default deny incoming`  
 - `sudo ufw default allow outgoing`  
-- `sude ufw deny 22`  
+- `sudo ufw deny 22`  
 - `sudo ufw allow 2200/tcp`  
 - `sudo ufw allow www`  
 - `sudo ufw allow ntp`  
 - `sudo ufw show added`  
+
+Should Read:
+
+ufw deny 22
+ufw allow 2200/tcp
+ufw allow 80/tcp
+ufw allow 123
+
 - `sudo ufw enable`  
+- select `Y` to enable the firewall  
 - `sudo ufw status`  
+
+Should Read:
+
+To                         Action      From
+--                         ------      ----
+22                         DENY        Anywhere                  
+2200/tcp                   ALLOW       Anywhere                  
+80/tcp                     ALLOW       Anywhere                  
+123                        ALLOW       Anywhere                  
+22 (v6)                    DENY        Anywhere (v6)             
+2200/tcp (v6)              ALLOW       Anywhere (v6)             
+80/tcp (v6)                ALLOW       Anywhere (v6)             
+123 (v6)                   ALLOW       Anywhere (v6)    
 
 ### Configure Lightsail Dashboard
 - Login to your Lightsail Dashboard
@@ -69,7 +95,114 @@ IP 18.217.76.29
 - Add **Custom TCP Port 2200**
 - Add **Custom TCP Port 123**
 - Save Changes
+- Be sure to complete these steps othwerise you'll lock yourself out of the server
+
+Networking should look like:
+
+Application	Protocol	Port range	
+HTTP	        TCP	        80	
+Custom	        TCP	        123	
+Custom	        TCP	        2200
+
+
+**Can now login with** `ssh -i ~/.ssh/udacity_key.rsa grader@18.188.178.251 -p 2200`   
 
 ## Prepare to Deploy Your Project
 
-## Deploy the Item Catalog Project
+### Install Apache
+- `sudo apt-get install apache2`  
+- select `Y` to continue  
+- `sudo apt-get install libapache2-mod-wsgi`  
+- select `Y` to continue  
+- `sudo service apache2 restart`  
+
+### Install & Configure PostgresSQL
+- `sudo apt-get install postgresql`  
+- select `Y` to continue  
+- `sudo apt-get install postgresql-contrib`  
+- `sudo -u postgres createuser -P catalog`  
+- Enter a password and confirm password of your choice for the new role. 
+- `sudo -u postgres createdb -O catalogUser catalogDb`  
+
+### Install Git
+`sudo apt-get install git`  
+
+### Clone Item Catalog Repository
+`cd /var/www`
+`sudo mkdir catalogApp`
+`cd catalogApp`
+`sudo git clone https://github.com/lomo009/item-catalog.git catalog`
+`sudo nano app.py`
+- change:
+     engine = create_engine('sqlite:///itemCatalog.db') 
+     to 
+     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
+`sudo nano database_setup.py`
+- change:
+     engine = create_engine('sqlite:///itemCatalog.db') 
+     to 
+     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
+- `sudo nano lotsofitems.py`
+- change:
+     engine = create_engine('sqlite:///itemCatalog.db') 
+     to 
+     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
+
+### Install App Dependencies
+`sudo apt-get install python-pip`
+- select `Y` to continue  
+`sudo pip install flask`
+`sudo pip install sqlalchemy`
+`sudo pip install oauth2client`
+`sudo pip install psycopg2`
+`sudo pip install requests`
+
+### Seed Database
+`python database_setup.py`
+`python lotsofitems.py`
+
+
+### Update app.wsgi file
+- Inside of /var/www/catalog  
+`sudo nano app.wsgi`  
+- Copy and paste the following into the file:
+import sys
+import logging
+logging.basicConfig(stream=sys.stderr)
+sys.path.insert(0, "/var/www/catalogApp/catalog/")
+sys.path.insert(1, "/var/www/catalogApp/")
+
+from catalog import app as application
+application.secret_key = "my_secret_key"  
+
+- Exit and Save  
+
+
+### Configure Apache Server
+
+sudo nano /etc/apache2/sites-available/CatalogApp.conf
+
+<VirtualHost *:80>
+	ServerName 18.188.178.251
+        ServerAdmin logan.morrow@me.com
+	WSGIScriptAlias / /var/www/CatalogApp/app.wsgi
+	<Directory /var/www/CatalogApp/catalog/>
+	    Order allow,deny
+    	Allow from all
+	</Directory>
+	Alias /static /var/www/CatalogApp/catalog/static
+	<Directory /var/www/CatalogApp/catalog/static/>
+    	Order allow,deny
+    	Allow from all
+    </Directory>
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	LogLevel warn
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+- Exit and Save
+
+### Configure Google OAuth2 API
+
+- Add http://18.188.178.251.xip.io/ to authorized javascript origin
+- Add http://18.188.178.251.xip.io/login and http://18.188.178.251.xip.io/login to authorized redirect URL
