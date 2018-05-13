@@ -1,14 +1,16 @@
-# linux-server-config
+# Udacity Linux Server Configuration
 
-IP: `18.188.178.251`
+Final project for the Full Stack Nanodegree. The purpose was to create and secure a server install and configure database, and deploy one of my existing apps from the course.
 
-## Get Your Server
+IP: `18.188.178.251`  
+Site: `http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/`
+
+### Get Your Server
 - Start new Ubuntu Linux Server instance with Amazon Lightsail
 - Follow instructions to SSH into the server.
 - Log in with `ssh -i ~/.ssh/LightsailDefaultPrivateKey-us-east-2.pem ubuntu@18.188.178.251` on local machine
 - Enter `Yes` when prompted
 
-## Secure Your Server
 ### Update all currently installed packages
 - `sudo apt-get update` to update packages  
 - `sudo apt-get upgrade` to upgrade packages  
@@ -109,8 +111,6 @@ Custom	        TCP	        2200
 
 **Can now login with** `ssh -i ~/.ssh/udacity_key.rsa grader@18.188.178.251 -p 2200`   
 
-## Prepare to Deploy Your Project
-
 ### Install Apache
 - `sudo apt-get install apache2`  
 - select `Y` to continue  
@@ -202,8 +202,10 @@ application.secret_key = "my_secret_key"
 
 ### Configure Google OAuth2 API
 
-- Add http://18.188.178.251.xip.io/ to authorized javascript origin
-- Add http://18.188.178.251.xip.io/login and http://18.188.178.251.xip.io/login to authorized redirect URL
+- Add http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/ to authorized javascript origin
+- Add http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/login and http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com//login to authorized redirect URL
+- Be sure to add http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/ to the `Javascript Origins` part of client_secrets.json
+- Altertnatively download a new clients_secrets.json file from Google and replace contents when you have added the new routes.
 
 ### Restart Apache
 - `sudo a2dissite 000-default.conf`
@@ -212,3 +214,10 @@ application.secret_key = "my_secret_key"
 
 ### Debugging:
 - Initially there was an error loading my app, as it couldn't find my clients_secrets.json file. Inside of `__init__.py` I had to change the path from relative to absolute by chaging it to `/var/www/CatalogApp/CatalogApp/client_secrets.json` and it worked.
+
+### References
+https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps 
+
+https://help.pythonanywhere.com/pages/NoSuchFileOrDirectory/
+
+Udacity Full Stack Nanodegree Lessons
