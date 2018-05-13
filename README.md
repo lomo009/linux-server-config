@@ -104,7 +104,6 @@ HTTP	        TCP	        80
 Custom	        TCP	        123	
 Custom	        TCP	        2200
 
-
 **Can now login with** `ssh -i ~/.ssh/udacity_key.rsa grader@18.188.178.251 -p 2200`   
 
 ## Prepare to Deploy Your Project
@@ -125,84 +124,89 @@ Custom	        TCP	        2200
 - `sudo -u postgres createdb -O catalogUser catalogDb`  
 
 ### Install Git
-`sudo apt-get install git`  
+- `sudo apt-get install git`  
 
 ### Clone Item Catalog Repository
-`cd /var/www`
-`sudo mkdir catalogApp`
-`cd catalogApp`
-`sudo git clone https://github.com/lomo009/item-catalog.git catalog`
-`sudo nano app.py`
-- change:
-     engine = create_engine('sqlite:///itemCatalog.db') 
-     to 
-     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
-`sudo nano database_setup.py`
-- change:
-     engine = create_engine('sqlite:///itemCatalog.db') 
-     to 
-     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
+- `cd /var/www`
+- `sudo mkdir CatalogApp`
+- `cd CatalogApp`
+- `sudo git clone https://github.com/lomo009/item-catalog.git`
+- `sudo mv ./item-catalog ./CatalogApp`
+- `cd CatalogApp`
+- `sudo mv app.py __init__py`
+- `sudo nano app.py`
+- Change: `engine = create_engine('sqlite:///itemCatalog.db')` to `engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')` 
+- `sudo nano database_setup.py`  
+- Change: `engine = create_engine('sqlite:///itemCatalog.db')` to `engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')` 
 - `sudo nano lotsofitems.py`
-- change:
-     engine = create_engine('sqlite:///itemCatalog.db') 
-     to 
-     engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')
+- Change: `engine = create_engine('sqlite:///itemCatalog.db')` to `engine = create_engine('postgresql://catalogUser:password@localhost/catalogDb')` 
 
 ### Install App Dependencies
-`sudo apt-get install python-pip`
+- `sudo apt-get install python-pip`
 - select `Y` to continue  
-`sudo pip install flask`
-`sudo pip install sqlalchemy`
-`sudo pip install oauth2client`
-`sudo pip install psycopg2`
-`sudo pip install requests`
+- `sudo pip install flask`
+- `sudo pip install sqlalchemy`
+- `sudo pip install oauth2client`
+- `sudo pip install psycopg2`
+- `sudo pip install requests`
 
 ### Seed Database
-`python database_setup.py`
-`python lotsofitems.py`
+- `python database_setup.py`
+- `python lotsofitems.py`
 
+### Update catalogapp.wsgi file
+- Inside of /var/www/CatalogApp  
+- `sudo nano catalogapp.wsgi`  
+- Copy and paste the following into the file:  
 
-### Update app.wsgi file
-- Inside of /var/www/catalog  
-`sudo nano app.wsgi`  
-- Copy and paste the following into the file:
+```
+#!/usr/bin/python
 import sys
 import logging
 logging.basicConfig(stream=sys.stderr)
-sys.path.insert(0, "/var/www/catalogApp/catalog/")
-sys.path.insert(1, "/var/www/catalogApp/")
+sys.path.insert(0,"/var/www/CatalogApp/")
 
-from catalog import app as application
+from CatalogApp import app as application
 application.secret_key = "my_secret_key"  
 
 - Exit and Save  
-
+```
 
 ### Configure Apache Server
 
-sudo nano /etc/apache2/sites-available/CatalogApp.conf
+- `sudo nano /etc/apache2/sites-available/CatalogApp.conf`  
+- Copy and paste the following into the file:  
 
+```
 <VirtualHost *:80>
 	ServerName 18.188.178.251
         ServerAdmin logan.morrow@me.com
-	WSGIScriptAlias / /var/www/CatalogApp/app.wsgi
-	<Directory /var/www/CatalogApp/catalog/>
+	WSGIScriptAlias / /var/www/CatalogApp/catalogapp.wsgi
+	<Directory /var/www/CatalogApp/CatalogApp/>
 	    Order allow,deny
-    	Allow from all
+            Allow from all
 	</Directory>
-	Alias /static /var/www/CatalogApp/catalog/static
-	<Directory /var/www/CatalogApp/catalog/static/>
-    	Order allow,deny
-    	Allow from all
+	Alias /static /var/www/CatalogApp/CatalogApp/static
+	<Directory /var/www/CatalogApp/CatalogApp/static/>
+        Order allow,deny
+        Allow from all
     </Directory>
 	ErrorLog ${APACHE_LOG_DIR}/error.log
 	LogLevel warn
 	CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
-
+```  
 - Exit and Save
 
 ### Configure Google OAuth2 API
 
 - Add http://18.188.178.251.xip.io/ to authorized javascript origin
 - Add http://18.188.178.251.xip.io/login and http://18.188.178.251.xip.io/login to authorized redirect URL
+
+### Restart Apache
+- `sudo a2dissite 000-default.conf`
+- `sudo a2ensite CatalogApp.conf`
+- `sudo service apache2 reload`
+
+### Debugging:
+- Initially there was an error loading my app, as it couldn't find my clients_secrets.json file. Inside of `__init__.py` I had to change the path from relative to absolute by chaging it to `/var/www/CatalogApp/CatalogApp/client_secrets.json` and it worked.
