@@ -1,11 +1,20 @@
 # Udacity Linux Server Configuration
 
-Final project for the Full Stack Nanodegree. The purpose was to create and secure a server install and configure database, and deploy one of my existing apps from the course.
+Final project for the Full Stack Nanodegree. The purpose was to create and secure a server, install and configure database, and deploy one of my existing apps from the course.
 
 IP: `18.188.178.251`  
-Site: `http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/`
+Port: 2200  
+Site: http://ec2-18-188-178-251.us-east-2.compute.amazonaws.com/
 
-### Get Your Server
+## Included Packages
+- Python 2.7
+- PostgresSQL
+- Apache2
+- Git
+
+## Configuration
+
+### Get Server
 - Start new Ubuntu Linux Server instance with Amazon Lightsail
 - Follow instructions to SSH into the server.
 - Log in with `ssh -i ~/.ssh/LightsailDefaultPrivateKey-us-east-2.pem ubuntu@18.188.178.251` on local machine
@@ -216,8 +225,8 @@ application.secret_key = "my_secret_key"
 - Initially there was an error loading my app, as it couldn't find my clients_secrets.json file. Inside of `__init__.py` I had to change the path from relative to absolute by chaging it to `/var/www/CatalogApp/CatalogApp/client_secrets.json` and it worked.
 
 ### References
-https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps 
+https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps  
 
-https://help.pythonanywhere.com/pages/NoSuchFileOrDirectory/
+https://help.pythonanywhere.com/pages/NoSuchFileOrDirectory/  
 
 Udacity Full Stack Nanodegree Lessons
