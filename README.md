@@ -75,7 +75,7 @@ ufw allow 123
 - `sudo ufw status`  
 
 Should Read:
-
+```
 To                         Action      From
 --                         ------      ----
 22                         DENY        Anywhere                  
@@ -86,6 +86,7 @@ To                         Action      From
 2200/tcp (v6)              ALLOW       Anywhere (v6)             
 80/tcp (v6)                ALLOW       Anywhere (v6)             
 123 (v6)                   ALLOW       Anywhere (v6)    
+```
 
 ### Configure Lightsail Dashboard
 - Login to your Lightsail Dashboard
@@ -97,12 +98,14 @@ To                         Action      From
 - Save Changes
 - Be sure to complete these steps othwerise you'll lock yourself out of the server
 
+```
 Networking should look like:
 
 Application	Protocol	Port range	
 HTTP	        TCP	        80	
 Custom	        TCP	        123	
 Custom	        TCP	        2200
+```
 
 **Can now login with** `ssh -i ~/.ssh/udacity_key.rsa grader@18.188.178.251 -p 2200`   
 
@@ -168,9 +171,8 @@ sys.path.insert(0,"/var/www/CatalogApp/")
 
 from CatalogApp import app as application
 application.secret_key = "my_secret_key"  
-
+```  
 - Exit and Save  
-```
 
 ### Configure Apache Server
 
